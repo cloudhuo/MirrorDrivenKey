@@ -11,10 +11,10 @@ else
 
 global proc makeExtraToolsMenu()
 {
-    menu -parent MayaWindow -tearOff true -label "Extra Tools" PolishToolsMenu; 
+    menu -parent MayaWindow -tearOff true -label "Extra Tools" ExtraToolsMenu; 
     
     menuItem -divider true -dividerLabel "Mirror Driven Key";
-    menuItem -p PolishToolsMenu -l "Mirror Driven Key" -c "python(\"import MirrorDrivenKey\")";
+    menuItem -p ExtraToolsMenu -l "Mirror Driven Key" -c "python(\"import MirrorDrivenKey\\n\\nMirrorDrivenKey.OptionsWindow.showUI()\")";
 }
     
 if ( ! `about -b`)
