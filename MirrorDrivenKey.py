@@ -452,5 +452,5 @@ class OptionsWindow(object):
 
        
         
-OptionsWindow.showUI()
+#OptionsWindow.showUI()
         
