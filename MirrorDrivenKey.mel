@@ -1,0 +1,26 @@
+string $menuName;
+if (catch($menuName = `menu -q -label ExtraToolsMenu`))
+{
+    print "no menu\n";
+}
+else
+{
+    if($menuName == "Extra Tools")
+        deleteUI ExtraToolsMenu;
+}
+
+global proc makeExtraToolsMenu()
+{
+    menu -parent MayaWindow -tearOff true -label "Extra Tools" PolishToolsMenu; 
+    
+    menuItem -divider true -dividerLabel "Mirror Driven Key";
+    menuItem -p PolishToolsMenu -l "Mirror Driven Key" -c "python(\"import MirrorDrivenKey\")";
+}
+    
+if ( ! `about -b`)
+{
+    makeExtraToolsMenu();
+}
+
+// Remove Selective Preload
+optionVar -iv "fileSelPreload" 0;
