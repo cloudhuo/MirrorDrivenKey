@@ -502,8 +502,3 @@ class OptionsWindow(object):
         self.mirrorB = cmds.radioButton( 'Mirror Behavior', align = 'center', sl = True )
         cmds.text( label='   ' )
         self.mimicB = cmds.radioButton( 'Mimic Behavior', align = 'center', sl = False )
-
-       
-        
-OptionsWindow.showUI()
-        
