@@ -201,8 +201,8 @@ def copyDrivenKeyAttr(father_list = [], children_list = [], missing_list = [], f
         for i in lostList:
             lost += i + ', '
         lostList = '\n'.join(map(str, lostList))
-        cmds.confirmDialog( title='Mirror Failed', message='Mirror failed, missing nodes: \n' + lostList, button=['OK'], defaultButton='OK')
-
+        cmds.confirmDialog( title='Mirror Failed', message='Can not finish mirror, missing nodes: \n' + lostList, button=['OK'], defaultButton='OK')
+        return 'Failed'
 
 #Windows function
 class OptionsWindow(object):
@@ -475,6 +475,8 @@ class OptionsWindow(object):
             cmds.deleteUI(self.progressWindow, window = True)
             if result == 'Success':
                 cmds.confirmDialog( title='Mirror Result', message='=====================Mirror Has Done.=======================', button=['OK'], defaultButton='OK')
+            elif result == 'Failed':
+                cmds.confirmDialog( title='Mirror Result', message='=====================Mirror Failed.=======================', button=['OK'], defaultButton='OK')
             else:
                 pass
                 
