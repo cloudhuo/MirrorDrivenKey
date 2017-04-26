@@ -2,7 +2,7 @@ import maya.cmds as cmds
 
 # Global Functions
 def findOutputs():
-    curves = cmds.ls(type = ('animCurveUL', 'animCurveUU', 'animCurveUA', 'animCurveUT'))
+    curves = cmds.ls(type = ('animCurveUL'))
 
     items = []
     for c in curves:
@@ -33,8 +33,10 @@ def findOutputs():
             drivenAttr2 = drivenAttr
         else:
             cmds.warning('No driven attr found for ' + c)
-             
-        items.append([driving[0], drivenAttr2])
+        #print driving
+        if driving != None:
+                
+            items.append([driving[0], drivenAttr2])
         
     
     return items
@@ -51,28 +53,37 @@ def modifyNodeName(test=''):
 def findDrivenKey(name = '', old = '', new = ''):
     
     transformed_list = []
+    transformed_list_father = []
     transformed_list_child = []
     test_list = []
+    missing_list = []
     
     drivenKeyRelationship = findOutputs()
     for output in drivenKeyRelationship:
         if output[0] == name:
             transformed_list.append(output[1])
-    
     for i in transformed_list:
         if (old in i) == False:
-            print 'Unable to find keywords in name of driven key items'
-            cmds.confirmDialog( title='Keyword missing', message='Unable to find keywords in name of driven key.', button=['OK'], defaultButton='OK')
-            return False
-        transformed_list_child.append(i.replace(old, new))
-    return [transformed_list,transformed_list_child]
+            missing_list.append(i)            
+            #return False
+        else:
+            transformed_list_father.append(i)
+            transformed_list_child.append(i.replace(old, new))
+    if len(missing_list)!=0:
+        print 'Unable to find keywords in name of driven key items'
+        percentage = str(round(float(len(transformed_list) - len(missing_list))/float(len(transformed_list)) * 100))
+        count = str(len(missing_list))
+        missing_list = '\n'.join(map(str, missing_list))
+        cmds.confirmDialog( title='Keyword missing', message='Due to the given keyword, '+percentage+'% completed, and '+count+
+        ' driven node(s) are skipped. They are: \n ' + missing_list, button=['OK'], defaultButton='OK')
+    return [transformed_list_father,transformed_list_child, missing_list]
      
 # Input 1: name of channel, Input2: name of target
-def copyDrivenKeyAttr(father_list = [], children_list = [], father_driver_list='', children_driver_list = '', flag = 0):
+def copyDrivenKeyAttr(father_list = [], children_list = [], missing_list = [], father_driver_list='', children_driver_list = '', flag = 0):
     #print father_list
     #declare a list that store missing driven item
     lostList = []
-    if len(father_list) == 0:
+    if (len(father_list) == 0 and len(missing_list) == 0):
         print 'No driven keys on this driver key attribute, try another one pls'#####################
         cmds.confirmDialog( title='Failed to find driven key', message='No driven keys on this source driver, try another one.', button=['OK'], defaultButton='OK')
         return
@@ -87,11 +98,15 @@ def copyDrivenKeyAttr(father_list = [], children_list = [], father_driver_list='
         for i in range(len(father_list)):
             # Preprocess string format
             # Transform the last character into capital
-            father_change_list = list(father_list[i])
+            
+            #father_change_list = list(father_list[i])
+            father_change_list = father_list[i]
             #father_change_list[-1] = father_change_list[-1].upper() 
             father_list[i] = ''.join(father_change_list)
 
-            children_change_list = list(children_list[i])
+            #children_change_list = list(children_list[i])
+            
+            children_change_list  = children_list[i]
             #children_change_list[-1] = children_change_list[-1].upper()
             children_list[i] = ''.join(children_change_list)
         
@@ -108,6 +123,7 @@ def copyDrivenKeyAttr(father_list = [], children_list = [], father_driver_list='
             except:
                 cmds.confirmDialog( title='Invalid target driver', message='You seemed select the wrong name.', button=['OK'], defaultButton='OK')
                 return
+            
             
         
             #MindrivenAttr
@@ -176,15 +192,16 @@ def copyDrivenKeyAttr(father_list = [], children_list = [], father_driver_list='
             cmds.setAttr(father_driver_list, 0)
             cmds.setAttr(children_driver_list, 0)
             
-        cmds.confirmDialog( title='Mirror Success!', message='Congratulation, mirror success!', button=['OK'], defaultButton='OK')
+        return 'Success'
+            
+        #cmds.confirmDialog( title='Mirror Result', message='=====================Mirror Has Done.=======================', button=['OK'], defaultButton='OK')
     else:
         print 'Mirror failed, missing nodes:'
-        for i in lostList:
-            print i
         lost = ''
         for i in lostList:
             lost += i + ', '
-        cmds.confirmDialog( title='Mirror Failed', message='Mirror failed, missing nodes: ' + lost, button=['OK'], defaultButton='OK')
+        lostList = '\n'.join(map(str, lostList))
+        cmds.confirmDialog( title='Mirror Failed', message='Mirror failed, missing nodes: \n' + lostList, button=['OK'], defaultButton='OK')
 
 
 #Windows function
@@ -347,7 +364,7 @@ class OptionsWindow(object):
         )
     
     def loadHint(self, *args):
-        cmds.confirmDialog(title='Load Driver Help', message='Follow procedures below to load your driven key source controller and target controller:'+
+        value = cmds.confirmDialog(title='Load Driver Help', message='Follow procedures below to load your driven key source controller and target controller:'+
         '\n                                                                                                                                           '+
         '                             '+
         '1. In your viewport, select a controller whose attribute has driven keys connections.'+
@@ -365,10 +382,12 @@ class OptionsWindow(object):
         '5. Finally, select attribute with driven keys on left side, and target attribute on right side.' +
         '\n                                                                                                                                            '+
         '                        '+
-        'NOTICE: Attribute with driven keys should has min and max value!', button=['OK'], defaultButton='OK')
+        'NOTICE: Attribute with driven keys should has min and max value!', button=['OK','Tutorial'], ds='Tutorial', defaultButton='OK')
+        if value == 'Tutorial':
+            cmds.launch(web = 'http://yunhaohuofiea.blogspot.com/2017/04/maya-mirror-driven-key-tool-guide.html')
    
     def loadHint2(self, *args):
-        cmds.confirmDialog(title='Type in Keyword Help', message=
+        value = cmds.confirmDialog(title='Type in Keyword Help', message=
         'Make sure the attribute you selected in the left node outliner above should drive or animate other geometry'+
         '\n                                                                                                                                            '+
         '                       '+
@@ -383,7 +402,9 @@ class OptionsWindow(object):
         '\n                                                                                                                                            '+
         '                       '+
         'The result of this example will be: "eye_r", "ear_r_" in the scene will be animated by the attibute you choose in the right node outliner above.'
-        , button=['OK'], defaultButton='OK')
+        , button=['OK','Tutorial'], ds = 'Tutorial', defaultButton='OK')
+        if value == 'Tutorial':
+            cmds.launch(web = 'http://yunhaohuofiea.blogspot.com/2017/04/maya-mirror-driven-key-tool-guide.html')
         
     def loadDriverCmd(self, *args):
         select_list = cmds.ls(sl = True)
@@ -404,27 +425,59 @@ class OptionsWindow(object):
     def actionBtnCmd(self,*args):
         self.applyBtnCmd()
         self.closeBtnCmd()
-        
+      
     def applyBtnCmd(self,*args):
+        #Making a progress bar
+        self.progressWindow = cmds.window(title = 'Progress', widthHeight = (300, 50))#,tb = False
+        cmds.columnLayout()
+        self.progressControl = cmds.progressBar(maxValue = 10, width = 300)
+        self.text = cmds.text(l = 'Start Progress...')
+        cmds.progressBar(self.progressControl, edit=True, pr = 0)
+        cmds.showWindow(self.progressWindow)
+        
         self.selected = cmds.nodeOutliner(self.myoutliner, q = True, cs = True )
         self.selected2 = cmds.nodeOutliner(self.myoutliner2, q = True, cs = True )
         self.src_text = cmds.textField(self.src, q = True, text = True)
         self.des_text = cmds.textField(self.des, q = True, text = True )
+        
+        cmds.text(self.text, e = True, l = 'Processing your inputs...')
+        cmds.progressBar(self.progressControl, edit=True, pr = 2)
+        
         if self.selected == None or self.selected2 == None:
+            cmds.deleteUI(self.progressWindow, window = True)
             cmds.confirmDialog( title='No attribute selected', message='Please select one attribute with driven keys in the left node outliner.', button=['OK'], defaultButton='OK')
             print 'Please select one attribute in the node outliner'
             return
         elif self.src_text == '' or self.des_text == '':
+            cmds.deleteUI(self.progressWindow, window = True)
             cmds.confirmDialog( title='Missing replacement keywords', message='Please type in the replacements key words. ', button=['OK'], defaultButton='OK')
             print 'Please type in the replacements key words'
             return
         else:
+            #Progress 30%
+            cmds.text(self.text, e = True, l = 'Processing your inputs...')
+            cmds.progressBar(self.progressControl, edit=True, pr = 3)
             flagM = cmds.radioButton(self.mirrorB, q = True, sl = True)
+            #Progress 50%
+            cmds.text(self.text, e = True, l = 'Finding Drivenkeys...')
+            cmds.progressBar(self.progressControl, edit=True, pr = 5)
             resultList = findDrivenKey(self.selected[0], self.src_text, self.des_text) 
             if resultList == False:
+                cmds.deleteUI(self.progressWindow, window = True)
                 print 'Mirror failed.'   
                 return
-            copyDrivenKeyAttr(resultList[0], resultList[1], self.selected[0], self.selected2[0], flagM)
+            # Progress 70%
+            cmds.text(self.text, e = True, l = 'Processing valid attribute values, should take a while...')
+            cmds.progressBar(self.progressControl, edit=True, pr = 7)
+            result = copyDrivenKeyAttr(resultList[0], resultList[1], resultList[2], self.selected[0], self.selected2[0], flagM)
+            cmds.text(self.text, e = True, l = 'Done.')
+            cmds.progressBar(self.progressControl, edit=True, pr =10)
+            cmds.deleteUI(self.progressWindow, window = True)
+            if result == 'Success':
+                cmds.confirmDialog( title='Mirror Result', message='=====================Mirror Has Done.=======================', button=['OK'], defaultButton='OK')
+            else:
+                pass
+                
         
     def closeBtnCmd(self,*args):
         cmds.deleteUI(self.window, window = True)
@@ -452,5 +505,5 @@ class OptionsWindow(object):
 
        
         
-#OptionsWindow.showUI()
+OptionsWindow.showUI()
         
